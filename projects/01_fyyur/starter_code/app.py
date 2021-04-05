@@ -5,7 +5,7 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -31,7 +31,7 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
@@ -50,7 +50,7 @@ class Venue(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artist'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
@@ -70,16 +70,16 @@ class Artist(db.Model):
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 class Show(db.Model):
-  __tablename__ = 'Show'
+  __tablename__ = 'show'
   id = db.Column(db.Integer, primary_key=True)
   start_time = db.Column(db.DateTime())
 
   # foreign key relation
-  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
-  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
+  artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
+  venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
 
-  artist = db.relationship("Artist", backref=db.backref('Show', cascade='all, delete'))
-  venue = db.relationship("Venue", backref=db.backref('Show', cascade='all, delete'))
+  artist = db.relationship("Artist", backref=db.backref('show', cascade='all, delete'))
+  venue = db.relationship("Venue", backref=db.backref('show', cascade='all, delete'))
 
 
 #----------------------------------------------------------------------------#
@@ -246,13 +246,38 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
+  # TODO: on unsuccessful db insert, flash an error instead.
+
+  form = VenueForm(request.form)
+
+  try:
+    venue = Venue(
+      name=form.name.data,
+      city=form.city.data,
+      state=form.state.data,
+      address=form.address.data,
+      image_link=form.image_link.data,
+      facebook_link=form.facebook_link.data,
+      genres=form.genres.data,
+      website=form.website_link.data,
+      seeking_talent=form.seeking_talent.data,
+      seeking_description=form.seeking_description.data
+    )
+    db.session.add(venue)
+    db.session.commit()
+    flash('Venue ' + form.name.data + ' was successfully listed!')
+
+  except:
+    db.session.rollback()
+    flash('Something went wrong at database')
+
+  finally:
+    db.session.close()
+    return render_template('pages/home.html')
 
   # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
