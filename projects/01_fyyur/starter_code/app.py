@@ -110,29 +110,19 @@ def index():
 
 @app.route('/venues')
 def venues():
+
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+
+  data = []
+  city_result = Venue.query.distinct(Venue.city, Venue.state).all()
+  for result in city_result:
+    venues = Venue.query.filter(Venue.city == result.city, Venue.state == result.state).all()
+    data.append({
+      'city': result.city,
+      'state': result.state,
+      'venues': venues
+    })
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
@@ -256,6 +246,7 @@ def create_venue_submission():
       city=form.city.data,
       state=form.state.data,
       address=form.address.data,
+      phone=form.phone.data,
       image_link=form.image_link.data,
       facebook_link=form.facebook_link.data,
       genres=form.genres.data,
@@ -467,10 +458,37 @@ def create_artist_submission():
   # TODO: modify data to be the data object returned from db insertion
 
   # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
+
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-  return render_template('pages/home.html')
+
+  form = ArtistForm(request.form)
+
+  try:
+    artist = Artist(
+      name=form.name.data,
+      city=form.city.data,
+      state=form.state.data,
+      phone=form.phone.data,
+      image_link=form.image_link.data,
+      facebook_link=form.facebook_link.data,
+      genres=form.genres.data,
+      website=form.website_link.data,
+      seeking_venue=form.seeking_venue.data,
+      seeking_description=form.seeking_description.data
+    )
+
+    db.session.add(artist)
+    db.session.commit()
+    flash('Artist ' + form.name.data + ' was successfully listed!')
+
+  except:
+
+    db.session.rollback()
+    flash('Something went wrong while adding artist')
+  finally:
+    db.session.close()
+    return render_template('pages/home.html')
 
 
 #  Shows
