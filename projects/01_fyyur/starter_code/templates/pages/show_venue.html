@@ -74,6 +74,8 @@
 		{% endfor %}
 	</div>
 </section>
-
+<section>
+    <a href="/venues/{{ venue.id }}/edit">Edit Venue</a>
+    <button class="delete-venue" data-id="{{ venue.id }}">Delete Venue</button>
+</section>
 {% endblock %}
-
