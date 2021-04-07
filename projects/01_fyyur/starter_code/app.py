@@ -13,6 +13,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from datetime import datetime
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -143,8 +144,45 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-  result = Venue.query.filter(Venue.id == venue_id).all()[0]
-  return render_template('pages/show_venue.html', venue=result)
+
+  result = Venue.query.get(venue_id)
+  past_shows = db.session.query(Show).join(Artist).filter(Show.venue_id == venue_id, datetime.now() > Show.start_time).all()
+  upcoming_shows = db.session.query(Show).join(Artist).filter(Show.venue_id == venue_id, datetime.now() < Show.start_time).all()
+  past_show = []
+  upcoming_show = []
+  for show in past_shows:
+    past_show.append({
+      "artist_id": show.artist.id,
+      "artist_name": show.artist.name,
+      "artist_image_link": show.artist.image_link,
+      "start_time": format_datetime(str(show.start_time))
+    })
+  for show in upcoming_shows:
+    upcoming_show.append({
+      "artist_id": show.artist.id,
+      "artist_name": show.artist.name,
+      "artist_image_link": show.artist.image_link,
+      "start_time": format_datetime(str(show.start_time))
+    })
+  data = {
+    "id": result.id,
+    "name": result.name,
+    "genres": result.genres,
+    "address": result.address,
+    "city": result.city,
+    "state": result.state,
+    "phone": result.phone,
+    "website": result.website,
+    "facebook_link": result.facebook_link,
+    "seeking_talent": result.seeking_talent,
+    "seeking_description": result.seeking_description,
+    "image_link": result.image_link,
+    "upcoming_shows": upcoming_show,
+    "past_shows": past_show,
+    "past_shows_count": len(past_shows),
+    "upcoming_shows_count": len(upcoming_shows),
+  }
+  return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
 #  ----------------------------------------------------------------

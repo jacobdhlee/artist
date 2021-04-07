@@ -119,12 +119,14 @@
   <script type="text/javascript" src="/static/js/plugins.js" defer></script>
   <script>
       const venueDelete = document.getElementsByClassName('delete-venue')[0]
-      venueDelete.onclick = function(e) {
-          e.preventDefault();
-          const venueId = e.target.dataset['id'];
-          fetch(`/venues/${venueId}`, { method: 'DELETE' })
-              .then(() => window.location.href = '/')
-              .catch(() => console.log('error has occurred while delete venue ', venueId))
+      if(venueDelete) {
+          venueDelete.onclick = function(e) {
+              e.preventDefault();
+              const venueId = e.target.dataset['id'];
+              fetch(`/venues/${venueId}`, { method: 'DELETE' })
+                  .then(() => window.location.href = '/')
+                  .catch(() => console.log('error has occurred while delete venue ', venueId))
+          }
       }
   </script>
 </body>
